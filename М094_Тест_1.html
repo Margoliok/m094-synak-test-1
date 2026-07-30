@@ -168,6 +168,7 @@ const DATA = [
  ]},
 {sec:"2-СПЕЦ ПӘН. Деректер базасы",
  note:"20 сұрақ · бір немесе бірнеше дұрыс жауабы бар (үш дұрыс жауаптан артық емес)",
+ multiSel:true, // бүкіл бөлімде бірнеше жауап таңдауға болады
  qs:[
   {q:"Факультет–Кафедра–Оқытушы байланысын бейнелейтін ағаштар тізімінен тұратын деректер моделі",
    o:["объектіге бағытталған","иерархиялық","кестелік","ER","желілік","реляциондық"],a:[1],
@@ -249,7 +250,9 @@ DATA.forEach(section=>{
   section.qs.forEach(item=>{
     total++;
     const idx=gi++;
-    const multi=item.a.length>1;
+    // Бөлімде multiSel болса — барлық сұрақ checkbox (дұрыс жауап саны бір болса да),
+    // әйтпесе жауап саны бойынша анықталады.
+    const multi=section.multiSel===true||item.a.length>1;
     const card=document.createElement('div');
     card.className='q';
     card.dataset.idx=idx;
@@ -257,7 +260,8 @@ DATA.forEach(section=>{
     card.dataset.multi=multi?'1':'0';
 
     let html=`<span class="num">Сұрақ №${idx+1}</span>`;
-    if(multi) html+=`<span class="multi">(бірнеше жауап)</span>`;
+    // Дұрыс жауап санын алдын ала ашып қоймау үшін бөлімдік multiSel-де белгі көрсетілмейді.
+    if(multi&&!section.multiSel) html+=`<span class="multi">(бірнеше жауап)</span>`;
     html+=`<div class="stem">${escapeHtml(item.q)}</div>`;
     if(item.code) html+=`<pre>${escapeHtml(item.code)}</pre>`;
     item.o.forEach((opt,i)=>{
