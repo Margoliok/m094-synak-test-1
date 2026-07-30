@@ -1,0 +1,21 @@
+# Claude Code жұмыс каталогы (worktrees, жергілікті баптаулар)
+.claude/
+
+# ОЖ қоқысы
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.Spotlight-V100
+.Trashes
+
+# Office/OneDrive уақытша файлдары
+~$*
+*.tmp
+
+# Редакторлар
+.vscode/
+.idea/
+*.swp
+*~

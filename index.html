@@ -9,6 +9,7 @@
     --bg:#f4f6fb; --card:#ffffff; --ink:#1a2233; --muted:#5b6577;
     --line:#e2e7f0; --brand:#2f6df6; --brand-soft:#eaf1ff;
     --ok:#1a8a4f; --ok-soft:#e6f6ec; --bad:#c0392b; --bad-soft:#fdeceb;
+    --warn:#b8860b; --warn-soft:#fdf4e0;
     --shadow:0 1px 3px rgba(20,30,60,.06),0 6px 24px rgba(20,30,60,.06);
   }
   @media (prefers-color-scheme:dark){
@@ -16,6 +17,7 @@
       --bg:#0f141c; --card:#161d28; --ink:#e8edf6; --muted:#9aa6ba;
       --line:#28313f; --brand:#5c8cff; --brand-soft:#1a2740;
       --ok:#4cc98a; --ok-soft:#12291d; --bad:#ff7a6b; --bad-soft:#2c1715;
+      --warn:#e0b341; --warn-soft:#2a2312;
       --shadow:0 1px 3px rgba(0,0,0,.4),0 6px 24px rgba(0,0,0,.3);
     }
   }
@@ -55,18 +57,20 @@
   .opt:hover{border-color:var(--brand)}
   .opt .letter{font-weight:700;color:var(--muted);min-width:20px}
   .opt input{margin-top:5px;accent-color:var(--brand);flex-shrink:0}
-  .opt .txt{flex:1}
+  .opt .txt{flex:1;white-space:pre-wrap;min-width:0;overflow-x:auto}
+  .opt .txt.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    font-size:.84rem;line-height:1.45}
   .opt.correct{background:var(--ok-soft);border-color:var(--ok)}
   .opt.correct .letter{color:var(--ok)}
   .opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
   .opt.wrong .letter{color:var(--bad)}
   .opt.disabled{cursor:default}
   .expl{margin:10px 2px 12px;padding:12px 14px;border-radius:10px;
-    background:var(--brand-soft);font-size:.9rem;display:none}
+    background:var(--brand-soft);font-size:.9rem;display:none;white-space:pre-wrap}
   .expl.show{display:block}
   .expl b{color:var(--brand)}
-  .mark{font-weight:700;margin-left:6px}
-  .mark.ok{color:var(--ok)} .mark.bad{color:var(--bad)}
+  .mark{font-weight:700;margin-left:8px;font-size:.85rem}
+  .mark.ok{color:var(--ok)} .mark.bad{color:var(--bad)} .mark.part{color:var(--warn)}
   code{background:var(--bg);padding:1px 5px;border-radius:5px;font-size:.86em}
   footer{text-align:center;color:var(--muted);font-size:.82rem;margin-top:30px}
 </style>
@@ -89,7 +93,8 @@
 
   <div id="quiz"></div>
 
-  <footer>Дұрыс жауаптар мен түсіндірмелер стандартты теория бойынша дайындалған.</footer>
+  <footer>Дұрыс жауаптар мен түсіндірмелер стандартты теория бойынша дайындалған.<br>
+  ⚠ таңбасы — тесттің өз тұжырымындағы кемшілік көрсетілген жерлер.</footer>
 </div>
 
 <script>
@@ -122,47 +127,51 @@ const DATA = [
    e:"Факториалдың рекурсиясы: 0!=1, n!=n·(n-1)!."},
   {q:"printf() функциясының дұрыс жазылуы",o:['int a; printf("%c", a);','int a; printf("a=%s", a);','int a; printf("%s", a);','int a; printf("%d", a);','int a; printf("a=&i", a);'],a:[3],
    e:"Бүтін санды шығару спецификаторы — %d. %c — символ, %s — жол."},
-  {q:"Массивтегі іздеу алгоритмі",o:["шелл іздеуі","таңдап іздеу","кірістіріп іздеу","екілік (бинарлы) іздеу","квадраттық іздеу"],a:[3],
-   e:"Іздеу алгоритмі — екілік іздеу. Қалғандары — сұрыптау әдістері."},
-  {q:"2 3 17 7 8 9 1 4 6 9 2 3 1 18 үшін табиғи біріктіріп сұрыптаудың бірінші этапы",
-   o:["b=2 3 17 1 4 6 9 1 18  c=7 8 9 2 3  a=2 3 7 8 9 17 1 2 3 4 6 9 1 18","b=21 2 3 3 4 6 7 8 9 9 17 c=18 1 a=1 1 2 2 3 3 4 6 7 8 9 9 17 18","b=1 2 2 3 3 4 6 7 8 9 9 17 c=1 18 a=1 18 2 2 3 3 4 6 7 8 9 9 17 1","b=2 3 17 7 4 6 9 1 18 c=1 8 9 2 3 a=1 2 2 3 3 4 6 7 8 9 9 17 1 18","b=2 3 7 8 9 17 1 18 c=1 2 3 4 6 9 a=2 3 7 8 9 17 1 2 3 4 6 9 1 18"],a:[0],
-   e:"Табиғи сериялар: [2 3 17][7 8 9][1 4 6 9][2 3][1 18]. Кезектесіп бөлеміз: b=2 3 17 | 1 4 6 9 | 1 18, c=7 8 9 | 2 3."},
-  {q:"(6,3,2,8,1,7,4,5) — көпіршік әдісінің бірінші қадамының нәтижесі",
-   o:["(1,2,3,8,6,7,4,5)","(3,2,8,6,7,4,5,1)","(3,2,6,1,7,4,5,8)","(2,6,3,1,4,8,5,7)","(6,3,2,8,1,7,4,5)"],a:[2],
+  {q:"Массивтегі іздеу алгоритмінің классификациясы",o:["шелл іздеуі","таңдап іздеу","кірістіріп іздеу","екілік (бинарлы) іздеу","квадраттық іздеу"],a:[3],
+   e:"Іздеу алгоритмі — екілік іздеу. Қалғандары — сұрыптау әдістерінің атауларынан жасалған жалған нұсқалар."},
+  {q:"2 3 17 7 8 9 1 4 6 9 2 3 1 18 тізбегі үшін табиғи біріктіріп сұрыптаудың бірінші этапы",
+   o:["b=2 3 17 1 4 6 9 1 18   c=7 8 9 2 3   a= 2 3 7 8 9 17 1 2 3 4 6 9 1 18",
+      "b=21 2 3 3 4 6 7 8 9 9 17   c=18 1   a= 1 1 2 2 3 3 4 6 7 8 9 9 17 18",
+      "b=1 2 2 3 3 4 6 7 8 9 9 17   c=1 18   a= 1 18 2 2 3 3 4 6 7 8 9 9 17 1",
+      "b=2 3 17 7 4 6 9 1 18   c= 1 8 9 2 3   a= 1 2 2 3 3 4 6 7 8 9 9 17 1 18",
+      "b=2 3 7 8 9 17 1 18   c=1 2 3 4 6 9   a= 2 3 7 8 9 17 1 2 3 4 6 9 1 18"],a:[0],
+   e:"Табиғи сериялар: [2 3 17][7 8 9][1 4 6 9][2 3][1 18]. Кезектесіп бөлеміз: b-ға 1,3,5-серия = 2 3 17 | 1 4 6 9 | 1 18, c-ға 2,4-серия = 7 8 9 | 2 3. Біріктіргенде a = 2 3 7 8 9 17 | 1 2 3 4 6 9 | 1 18."},
+  {q:"(6, 3, 2, 8, 1, 7, 4, 5) бастапқы тізбек үшін көпіршік әдісімен сұрыптау алгоритмінің бірінші қадамының нәтижесінде алынатын тізбек",
+   o:["(1, 2, 3, 8, 6, 7, 4, 5)","(3, 2, 8, 6, 7, 4, 5, 1)","(3, 2, 6, 1, 7, 4, 5, 8)","(2, 6, 3, 1, 4, 8, 5, 7)","(6, 3, 2, 8, 1, 7, 4, 5)"],a:[2],
    e:"Бір өтуде ең үлкен элемент (8) соңына қалқиды: 6,3,2,8,1,7,4,5 → 3,2,6,1,7,4,5,8."},
-  {q:"Көпіршікті сұрыптаудың уақыттық күрделілігі",o:["O(n³)","O(n·log n)","O(n²)","O(1)","O(log n)"],a:[2],
+  {q:"Көпіршікті сұрыптау алгоритмінің уақыттық күрделілігі",o:["O(n³)","O(n·log n)","O(n²)","O(1)","O(log n)"],a:[2],
    e:"Қос кірістірілген цикл → O(n²)."},
-  {q:"Алгоритм күрделілігінің өсу ретімен орналасқан нұсқа",
+  {q:"Алгоритм күрделілігінің өсу ретімен орналасқан нұсқалары",
    o:["O(N²), O(N), O(log N)","O(1), O(N), O(N³)","O(2N), O(N), O(1)","O(N), O(1), O(N·log N)","O(N²), O(log N), O(N³)"],a:[1],
    e:"Өсу реті: O(1) < O(log N) < O(N) < O(N·log N) < O(N²) < O(N³). Тек B толығымен өспелі."},
   {q:"O(log n) уақытта жұмыс істейтін алгоритм",o:["екі матрицаны көбейту","сызықты іздеу","көпіршікті сұрыптау","бүтін санның тақ-жұптығын табу","екілік іздеу алгоритмі"],a:[4],
    e:"Екілік іздеу әр қадамда аралықты екіге бөледі → O(log n)."},
   {q:"Бір байланыстырылған тізім анықтамасы",
-   o:["FILO принципі бойынша жұмыс істейтін құрылым","келесі және алдыңғы түйінге көрсеткіші бар құрылым","LILO принципі бойынша жұмыс істейтін құрылым","LIFO принципі бойынша жұмыс істейтін құрылым","дерек пен келесі түйінге көрсеткіші бар мәліметтер құрылымы"],a:[4],
-   e:"Бір байланыстырылған тізімде әр түйін деректен және тек келесі түйінге сілтемеден тұрады."},
+   o:["FILO принципі бойынша жұмыс істейтін құрылым","келесі және алдыңғы түйінге көрсеткіші бар құрылым","LILO принципі бойынша жұмыс істейтін құрылым","LIFO принципі бойынша жұмысістейтін құрылым","дерек пен келесі түйінге көрсеткіші бар мәліметтер құрылымы"],a:[4],
+   e:"Бір байланыстырылған тізімде әр түйін деректен және тек келесі түйінге сілтемеден тұрады. Алдыңғы мен келесіге сілтеме — қос байланыстырылған тізім."},
   {q:"C++ тілінде динамикалық бүтін типті массивті жариялау",o:["int* a = new int[n]","int* a = new int*[n]","int a = new int[n]","int a[n]","int* a = new int(n)"],a:[0],
    e:"int* a = new int[n]; — n элементті динамикалық массив. new int(n) — бір элемент."},
   {q:"Стек әдістеріне жатпайтын функция",o:["pop()","size()","push()","clear","contains()"],a:[4],
-   e:"Стек операциялары: push, pop, top, size, empty. contains() стекке жатпайды."},
+   e:"Стектің негізгі операциялары: push, pop, top, size, empty. contains() — элементті іздеу, стек интерфейсіне жатпайды.\n⚠ Тесттің кемшілігі: сұрақ нақты тілді көрсетпейді. C++ std::stack-та clear() де жоқ (яғни D да жарамды), ал Java-ның java.util.Stack класында contains() те, clear() те бар. Курс контекстінде жауап — contains()."},
   {q:"Хеш кестесінің анықтамасы",
    o:["типтері бірдей элементтерден тұратын құрылым","әр түрлі типті реттелген деректер құрылымы","FIFO принципі бойынша жұмыс істейтін құрылым","өте жылдам іздеу мен қоюды қамтамасыздандыратын деректер құрылымы","бір-бірімен байланысқан деректер құрылымы"],a:[3],
    e:"Хеш-кесте кілт→индекс арқылы орташа O(1) уақытта жылдам іздеу мен қоюды қамтамасыз етеді."},
   {q:"Толтырылған массив ұяшығына кілтті хештеудің атауы",o:["бірігу","коллизия","ажырау","қиылысу","бөліну"],a:[1],
    e:"Екі кілт бір ұяшыққа хештелсе — бұл коллизия."},
   {q:"Хеш кестесінде коллизиядан құтылу әдісі",o:["ашық адресациялау әдісі","трапеция әдісі","орамдар әдісі","қадамдық бөлшектеу әдісі","квадрат ортасы әдісі"],a:[0],
-   e:"Коллизияны шешу: ашық адресациялау (open addressing) және тізбектеу."},
+   e:"Коллизияны шешу: ашық адресациялау (open addressing) және тізбектеу (chaining)."},
   {q:"AVL ағашында жою операциясының орындалу уақыты",o:["O(n³)","O(n²)","O(n·log n)","O(log n)","O(1)"],a:[3],
    e:"AVL — теңгерілген ағаш, биіктігі O(log n). Іздеу/қою/жою — O(log n)."},
   {q:"20 түйінді толық екілік ағаш, тамыры 0-деңгейде — 4-деңгейдегі түйін саны",o:["0","8","1","4","5"],a:[4],
    e:"Деңгейлер: 0→1, 1→2, 2→4, 3→8 (барлығы 15). Қалғаны 20−15=5 түйін 4-деңгейде."},
   {q:"Қызылды-қаралы ағаш қасиеттерінің бірі",
    o:["сол ішкі ағаштың кілті түйін кілтінен үлкен болса","барлық жапырақтар бір деңгейде орналасса","сол ішкі ағаштың кілті түйін кілтінен кіші болса","егер төбе қызыл болса, оның екі мұрагері де қара","әрбір түйіннің ең болмағанда бір ішкі ағашы бос"],a:[3],
-   e:"Негізгі қасиет: қызыл түйіннің балалары міндетті түрде қара."},
+   e:"Негізгі қасиет: қызыл түйіннің балалары міндетті түрде қара. (C — жалпы екілік іздеу ағашының қасиеті, қызылды-қаралыға тән емес.)"},
   {q:"Графтың түйінінің атауы",o:["мекенжай","қабырға","төбе","нүкте","жол"],a:[2],
-   e:"Граф түйіні = төбе (vertex). Түйіндерді қосатын — қабырға."},
+   e:"Граф түйіні = төбе (vertex). Түйіндерді қосатын — қабырға (edge)."},
   {q:"Барлық төбелік жұптар үшін ең қысқа жолдарды құру есебі",
    o:["бастапқы төбеден бірнеше қабырға қашықтықтағы төбелерге дейін","әр төбеден барлық басқа төбелерге дейін","бастапқы төбеден бір қабырға қашықтықтағы төбелерге дейін","бастапқы төбеден басқа төбелерге дейін","әр төбеден бастапқы төбеге дейін"],a:[1],
-   e:"All-pairs shortest path: әр төбеден барлық басқа төбелерге дейінгі ең қысқа жол."},
+   e:"All-pairs shortest path (мыс. Флойд–Уоршелл): әр төбеден барлық басқа төбелерге дейінгі ең қысқа жол."},
   {q:"Әр төбесі басқаларымен қабырғалармен жалғанған граф",o:["толық емес граф","гиперграф","шынжыр (тізбек)","толық граф","мультиграф"],a:[3],
    e:"Әр төбе қалған барлық төбелермен жалғанса — толық граф (complete graph)."}
  ]},
@@ -170,65 +179,142 @@ const DATA = [
  note:"20 сұрақ · бір немесе бірнеше дұрыс жауабы бар (үш дұрыс жауаптан артық емес)",
  multiSel:true, // бүкіл бөлімде бірнеше жауап таңдауға болады
  qs:[
-  {q:"Факультет–Кафедра–Оқытушы байланысын бейнелейтін ағаштар тізімінен тұратын деректер моделі",
+  {q:"Факультет – Кафедра – Оқытушы байланысын бейнелейтін ағаштар тізімінен тұратын деректер моделі",
    o:["объектіге бағытталған","иерархиялық","кестелік","ER","желілік","реляциондық"],a:[1],
    e:"Ағаш түріндегі (ата-ана→бала) байланыс — иерархиялық модель."},
   {q:"Біріктіру (union) амалының нәтижесі",
-   o:["екі қатынасқа да кіретін кортеждер жиыны","бірінші және екінші қатынасқа кіретін барлық кортеждер жиыны","бірінші қатынасқа кіретін, бірақ екіншісіне кірмейтін кортеждер жиыны","берілген шартты қанағаттандыратын кортеждер жиыны","берілген шартты қанағаттандырмайтын кортеждер жиыны","кемінде бір қатынастағы барлық кортеждер жиыны"],a:[1,5],
-   e:"Біріктіру (∪) — екі қатынастың кемінде біреуінде кездесетін барлық кортеждер. A — қиылысу, C — айырма."},
+   o:["екі қатынасқа да кіретін кортеждер жиыны",
+      "бірінші және екінші қатынасқа кіретін барлық кортеждер жиыны",
+      "бірінші қатынасқа кіретін, бірақ екіншісіне кірмейтін кортеждер жиыны",
+      "берілген шартты қанағаттандыратын кортеждер жиыны",
+      "берілген шартты қанағаттандырмайтын кортеждер жиыны",
+      "кемінде бір қатынастағы барлық кортеждер жиыны"],a:[1,5],
+   e:"Біріктіру (∪) — екі қатынастың кемінде біреуінде кездесетін барлық кортеждер. A — қиылысу (∩), C — айырма (−).\n⚠ Тесттің кемшілігі: B нұсқасының тұжырымы («бірінші ЖӘНЕ екінші қатынасқа кіретін») сөзбе-сөз оқығанда қиылысуды, яғни A-ны қайталайды. Бірмәнді дұрыс нұсқа — тек F. B «екі қатынастың да кортеждері» деген мағынада жазылған деп есептеп қосылды."},
   {q:"Жиыннан элементтерді тек берілген шарт бойынша іріктеп алу амалы",
    o:["айырмашылық","Декарт көбейтіндісі","проекция","INTERSECT","таңдау","бөлу","қарым-қатынастарды біріктіру","біріктіру"],a:[4],
-   e:"Таңдау (selection, σ) — шартқа сай жолдарды іріктейді. Проекция — бағандарды."},
-  {q:"Жалғыз мәнді атрибут",o:["білім алу дипломы","адам жасы","тауарлардың тізімі","телефон номері","факультет деканы","студенттер тізімі"],a:[1,4],
-   e:"Жалғыз мәнді атрибуттың бір мәні болады: жас, деканы. Тізімдер — көп мәнді."},
+   e:"Таңдау (selection, σ) — шартқа сай жолдарды (кортеждерді) іріктейді. Проекция — бағандарды таңдайды."},
+  {q:"Жалғыз мәнді атрибут",
+   o:["білім алу дипломы","адам жасы","тауарлардың тізімі","телефон номері","факультет деканы","студенттер тізімі"],a:[1,4],
+   e:"Жалғыз мәнді (single-valued) атрибуттың бір ғана мәні болады: адамның жасы — бір сан, факультеттің деканы — бір адам. C және F — тікелей тізім, сондықтан көп мәнді.\n⚠ Ескерту: A (диплом) және D (телефон номері) сөзбе-сөз жекеше тұр, бірақ классикалық ДББ теориясында бұлар көп мәнді деп саналады — бір адамда бірнеше диплом да, бірнеше телефон да болуы мүмкін."},
   {q:"Сыртқы кілтті құру шарты",
-   o:["байланысқан кестенің бастапқы кілтінің типіне сай болу","кестелерді байланыстыруда қолданылмайды","қатынастарды бірегей анықтауға мүмкіндік береді","қатынастарды белгілі формаға келтіруде қолданылады","байланысқан кестедегі NULL мәндерінен тұрады","байланысқан кестенің әлеуетті кілтіне тәуелді болады"],a:[0,5],
-   e:"Сыртқы кілт байланысқан кестенің әлеуетті/бастапқы кілтіне сілтейді және типі бойынша сәйкес."},
-  {q:"Кітаптың аты мен авторлар тізімі (авторлар массивте сақталған)",
-   o:["SELECT B.Title, A.Author FROM BOOKS AS B, UNNEST(B.AuthArray) AS A(Author);","SELECT B.Title FROM BOOKS AS Title, UNNEST(B.AuthArray) AS A(Title);","SELECT B.Title, A.Author FROM BOOKS AS B, NOT UNNEST(B.AuthArray) AS A(Author);","SELECT B.Title, A.Author FROM BOOKS AS B, BOOKS AS A(Author);","SELECT B.Title FROM BOOKS AS B;","SELECT B.Title, A.Author FROM BOOKS AS B;"],a:[0],
-   e:"UNNEST массивті (AuthArray) жеке жолдарға жаяды, әр кітап–автор жұбын шығарады."},
+   o:["байланысқан кестенің бастапқы кілтінің типіне сай болу",
+      "кестелерді байланыстыруда қолданылмайды",
+      "қатынастарды бірегей анықтауға мүмкіндік береді",
+      "қатынастарды белгілі формаға келтіруде қолданылады",
+      "байланысқан кестедегі NULL мәндерінен тұрады",
+      "байланысқан кестенің әлеуетті кілтіне тәуелді болады"],a:[0,5],
+   e:"Сыртқы кілт байланысқан кестенің бастапқы/әлеуетті кілтіне сілтейді және онымен типі бойынша сәйкес болуы керек."},
+  {q:"Кітаптың аты мен авторлар тізімі",
+   o:["SELECT B.Title, A.Author\nFROM BOOKS AS B, UNNEST(B.AuthArray) AS A(Author);",
+      "SELECT B.Title\nFROM BOOKS AS Title, UNNEST(B.AuthArray) AS A(Title);",
+      "SELECT B.Title, A.Author\nFROM BOOKS AS B, NOT UNNEST(B.AuthArray) AS A(Author);",
+      "SELECT B.Title, A.Author\nFROM BOOKS AS B, BOOKS AS A(Author);",
+      "SELECT B.Title\nFROM BOOKS AS B;",
+      "SELECT B.Title, A.Author\nFROM BOOKS AS B;"],a:[0],
+   e:"UNNEST массивті (AuthArray) жеке жолдарға жаяды, әр кітап–автор жұбын шығарады. B-да Title бүркеншік аты шатастырылған, C-да NOT UNNEST деген construct жоқ, D-да BOOKS өзімен қосылған, E мен F-та авторлар көзі мүлдем жоқ."},
   {q:"Биология кафедрасының оқытушылары",
-   o:["SELECT * FROM INSTRUCTOR WHERE DeptName <> 'Биология';","SELECT * FROM INSTRUCTOR='Биология';","SELECT Name FROM INSTRUCTOR GROUP BY DeptName;","SELECT Name FROM INSTRUCTOR WHERE DeptName = 'Биология';","SELECT Name FROM INSTRUCTOR;","SELECT Name FROM INSTRUCTOR GROUP BY DeptName = 'Биология';"],a:[3],
-   e:"Дұрыс сүзгі — WHERE DeptName = 'Биология'."},
-  {q:"«LIKE 'ab\\%cd%'» түрінде берілген болса",
-   o:["abcd тіркесі жоқ жазбалардан тұрады",'"ab"-мен басталып, "cd"-мен аяқталады','"ab\\%cd" деген тіркесті қарастырады','"ab%cd" тіркесінен басталады','"abcd" тіркесінен басталады','"abcd" тіркесімен аяқталады'],a:[3],
-   e:"\\% — экрандалған литерал % таңбасы, соңғы % — кез келген символдар. Демек жол \"ab%cd\" тіркесінен басталады."},
-  {q:"Бөлім бойынша, аты-жөні алфавитпен сұрыпталатын және жұмыс проектісі",
-   o:["FROM DEPART,EMPL,WORKS_ON,PROJECT WHERE Dnum=Dno AND Ssn=Essn AND Pno=Pnum ORDER BY Dname,Lname,Fname","...WHERE Dnum=Dno OR Ssn=Essn OR Pno=Pnum; (шарттар OR арқылы)","...FROM DEPART,EMPL,WORKS_ON,PROJECT; (WHERE/ORDER BY жоқ)","...WHERE ... GROUP BY Dname,Lname,Fname; (ORDER BY орнына GROUP BY)","...WHERE Dnum=Dno AND Ssn=Essn AND Pno=Pnum; (ORDER BY жоқ)","...ORDER BY Dname,Lname,Fname; (WHERE байланыс шарты жоқ)"],a:[0],
-   e:"Кестелерді дұрыс байланыстыратын WHERE шарттары ЖӘНЕ сұрыптау үшін ORDER BY бар жалғыз нұсқа — A."},
-  {q:"Сұраныстың нәтижесі: SELECT Semester, COUNT(*) ... FROM UCHPLAN WHERE Hours>60 GROUP BY ALL Semester",
-   o:["Әр семестрдегі сабақтар санының орташа мәнін шығарады","Әр семестрдегі сағат саны 60-тан аз болатын сабақтар санын шығарады","Барлық семестрлердегі сағат саны 60-тан көп сағаттар санын шығарады","Әр семестрдегі сағат саны 60-тан көп болатын сабақтар санын шығарады","Әр семестрдегі сағат саны 60-қа тең болатын сабақтар санын шығарады","Әр семестрдегі сабақтар санын және олардың атауларын шығарады"],a:[3],
-   e:"WHERE Hours>60 + GROUP BY Semester → әр семестрде сағаты 60-тан асатын сабақтар саны."},
-  {q:"Әр проект үшін номері, аты және онда істеген жұмыскерлер саны",
-   o:["SELECT Pnum, Pname, COUNT(*) FROM PROJECT, WORKS_ON WHERE Pnum=Pno","...HAVING COUNT(*)>2 (қосымша шектеу)","...WHERE Pnum==Pno (қате оператор)","SELECT ... COUNT (жақшасыз, синтаксис қатесі)","...COUNT(Employers) (қате баған)","...FROM PROJECT,WORKS_ON,EMPLOYEE ... AND Dno=5 (артық сүзгі)"],a:[0],
-   e:"Проекті мен жұмысшыны Pnum=Pno арқылы байланыстырып COUNT(*) санайды."},
-  {q:"Негізгі кестедегі жол өшірілсе, байланысқан жол да жойылатын кілттік сөз",
+   o:["SELECT *\nFROM INSTRUCTOR\nWHERE DeptName <> 'Биология';",
+      "SELECT *\nFROM INSTRUCTOR='Биология';",
+      "SELECT Name\nFROM INSTRUCTOR\nGROUP BY DeptName;",
+      "SELECT Name\nFROM INSTRUCTOR\nWHERE DeptName = 'Биология';",
+      "SELECT Name\nFROM INSTRUCTOR",
+      "SELECT Name\nFROM INSTRUCTOR\nGROUP BY DeptName = 'Биология';"],a:[3],
+   e:"Дұрыс сүзгі — WHERE DeptName = 'Биология'. A-да <> (тең емес) — керісінше нәтиже, B — синтаксис қатесі, C/F — GROUP BY сүзгі емес, E — сүзгісіз барлық оқытушы."},
+  {q:"«LIKE 'ab\\%cd%' » түрінде берілген болса",
+   o:["abcd тіркесі жоқ жазбалардан тұрады",
+      '"ab"-мен басталып, "cd"-мен аяқталады',
+      '"ab\\%cd" деген тіркесті қарастырады',
+      '"ab%cd" тіркесінен басталады',
+      '"abcd" тіркесінен басталады',
+      '"abcd" тіркесімен аяқталады'],a:[3],
+   e:"\\% — экрандалған, әдеттегі литерал % таңбасы; соңғы % — кез келген символдар. Демек жол \"ab%cd\" тіркесінен басталады.\n⚠ Ескерту: кері қиғаш сызық экрандау таңбасы ретінде MySQL-де әдепкі бойынша жұмыс істейді; SQL стандартында және PostgreSQL-де ол үшін ESCAPE '\\' деп нақты көрсету керек."},
+  {q:"Бөлім бойынша, әр бөлімнің ішінде жұмысшы фамилиясы, аты алфавит бойынша сұрыпталатын және жұмыс істейтін проектісі",
+   o:["SELECT D.Dname, E.Lname, E.Fname, P.Pname\nFROM DEPART AS D, EMPL AS E, WORKS_ON AS W, PROJECT AS P\nWHERE D.Dnum = E.Dno AND E.Ssn = W.Essn AND W.Pno = P.Pnum\nORDER BY D.Dname, E.Lname, E.Fname;",
+      "SELECT D.Dname, E.Lname, E.Fname, P.Pname\nFROM DEPART AS D, EMPL AS E, WORKS_ON AS W, PROJECT AS P\nWHERE D.Dnum = E.Dno OR E.Ssn = W.Essn OR W.Pno = P.Pnum;",
+      "SELECT D.Dname, E.Lname, E.Fname, P.Pname\nFROM DEPART AS D, EMPL AS E, WORKS_ON AS W, PROJECT AS P;",
+      "SELECT D.Dname, E.Lname, E.Fname, P.Pname\nFROM DEPART AS D, EMPL AS E, WORKS_ON AS W, PROJECT AS P\nWHERE D.Dnum == E.Dno AND E.Ssn == W.Essn AND W.Pno == P.Pnum\nGROUP BY D.Dname, E.Lname, E.Fname;",
+      "SELECT D.Dname, E.Lname, E.Fname, P.Pname\nFROM DEPART AS D, EMPL AS E, WORKS_ON AS W, PROJECT AS P\nWHERE D.Dnum = E.Dno AND E.Ssn = W.Essn AND W.Pno = P.Pnum;",
+      "SELECT D.Dname, E.Lname, E.Fname, P.Pname\nFROM DEPART AS D, EMPL AS E, WORKS_ON AS W, PROJECT AS P\nORDER BY D.Dname, E.Lname, E.Fname;"],a:[0],
+   e:"Кестелерді дұрыс байланыстыратын WHERE шарттары ЖӘНЕ сұрыптау үшін ORDER BY бар жалғыз нұсқа — A. E-де ORDER BY жоқ, F-та байланыс шарты жоқ (Декарт көбейтіндісі), B-да AND орнына OR, C-да екеуі де жоқ, D-да == операторы (SQL-де жоқ) және ORDER BY орнына GROUP BY."},
+  {q:"Келесі сұраныстың нәтижесі",
+   code:"SELECT Semester, COUNT(*) AS '60-тан көп сағаттар саны'\nFROM UCHPLAN\nWHERE Hours>60\nGROUP BY ALL Semester",
+   o:["Әр семестрдегі сабақтар санының орташа мәнін шығарады",
+      "Әр семестрдегі сағат саны 60 тан аз болатын сабақтар санын шығарады",
+      "Барлық семестрлердегі сағат саны 60-тан көп сағаттар саны шығарады",
+      "Әр семестрдегі сағат саны 60-тан көп болатын сабақтар санын шығарады",
+      "Әр семестрдегі сағат саны 60 қа тең болатын сабақтар санын шығарады",
+      "Әр семестрдегі сабақтар санын және олардың атауларын шығарады"],a:[3],
+   e:"WHERE Hours>60 сүзгісі + семестр бойынша топтау → әр семестрде сағаты 60-тан асатын сабақтардың саны.\n⚠ Тесттің кемшілігі: GROUP BY ALL (T-SQL кеңейтімі) WHERE-мен сүзіліп қалған семестрлерді де нәтижеге қосады (олардың COUNT мәні 0 болады). D нұсқасы кәдімгі GROUP BY-дың мінез-құлқын сипаттайды; ALL-дың дәл әсерін бірде-бір нұсқа сипаттамайды, сондықтан D — қалғандарының ішіндегі жалғыз жарамдысы."},
+  {q:"Әр проект үшін проект номерін, атын және сол проектте істеген жұмыскерлер саны",
+   o:["SELECT Pnum, Pname, COUNT(*)\nFROM PROJECT, WORKS_ON\nWHERE Pnum=Pno",
+      "SELECT Pnum, Pname, COUNT(*)\nFROM PROJECT, WORKS_ON\nWHERE Pnum=Pno\nHAVING COUNT (*) > 2",
+      "SELECT Pnum, Pname, COUNT(*)\nFROM PROJECT, WORKS_ON\nWHERE Pnum==Pno",
+      "SELECT Pnum, Pname, COUNT\nFROM PROJECT, WORKS_ON\nWHERE Pnum==Pno",
+      "SELECT Pnum, Pname, COUNT(Employers)\nFROM PROJECT, WORKS_ON\nWHERE Pnum=Pno",
+      "SELECT Pnumber, Pname, COUNT (*)\nFROM PROJECT, WORKS_ON, EMPLOYEE\nWHERE Pnumber = Pno AND Ssn = Essn AND Dno = 5"],a:[0],
+   e:"Проект пен жұмысшыны Pnum=Pno арқылы байланыстырып COUNT(*) санайды. B артық HAVING шектеуін қосады, C/D-да == (SQL-де жоқ) және COUNT жақшасыз, E-да жоқ баған, F-та артық EMPLOYEE қосылуы мен Dno=5 сүзгісі.\n⚠ Тесттің кемшілігі: «әр проект үшін» деген талап GROUP BY Pnum, Pname-ді міндет етеді, бірақ бірде-бір нұсқада GROUP BY жоқ. A — қалғандарын шығарып тастау арқылы таңдалған жалғыз жарамды нұсқа."},
+  {q:"Кесте құру барысында осы кілттік сөз арқылы негізгі кестедегі жол өшірілсе, онда байланысқан кестедегі жол да жойылады",
    o:["ON UPDATE CASCADE","FOREIGN KEY","ON UPDATE NO ACTION","DELETE","CHECK","ON DELETE NO ACTION","PRIVATE KEY","ON DELETE CASCADE"],a:[7],
-   e:"ON DELETE CASCADE — ата-жол жойылғанда тәуелді жолдар автоматты өшіріледі."},
-  {q:"Стипендиясы 25000 болатындарды екі есе көбейту",
-   o:["CREATE STUDENTS SET STIP=STIP*2 WHERE STIP=25000;","INSERT INTO STUDENTS SET STIP=STIP*2 WHERE STIP=25000;","DELETE STUDENTS WHERE STIP=25000;","INSERT STUDENTS SET STIP=STIP*2 WHERE STIP=25000;","UPDATE STUDENTS SET STIP=STIP*2 WHERE STIP=25000;","UPDATE STUDENTS SELECT STIP=STIP*2 WHERE STIP=25000;"],a:[4],
-   e:"Бар жолдарды өзгерту — UPDATE ... SET ... WHERE."},
-  {q:"2003 кодты сабақтан барлық студенттің балын NULL-ға өзгерту",
-   o:["INSERT USP SET Ocenka=NULL WHERE Pnum>2003;","CREATE USP SET Ocenka=NULL WHERE Pnum=2003;","INSERT INTO USP SET Ocenka=NULL WHERE Pnum=2003;","UPDATE USP SET Ocenka=NULL WHERE Pnum=2003;","INSERT INTO USP SET Ocenka=NULL;","UPDATE USP SET Ocenka=NULL;"],a:[3],
-   e:"Мәнді NULL-ге өзгерту — UPDATE USP SET Ocenka=NULL WHERE Pnum=2003."},
-  {q:"UNIQUE қолданып, 2021 жылы бір рет қана оқылған пәндер",
-   o:["...WHERE UNIQUE(SELECT R.CourseId FROM SECTION R WHERE T.CourseId=R.CourseId OR R.Year=2021);","...WHERE NOT UNIQUE(... AND R.Year=2021);","...WHERE SOME(... AND R.Year=2021);","...WHERE UNIQUE(SELECT R.CourseId FROM SECTION R WHERE T.CourseId=R.CourseId AND R.Year=2021);","...WHERE UNIQUE(SELECT CourseId FROM SECTION R WHERE CourseId=CourseId AND Year=2021);","...WHERE UNION(... AND R.Year=2021);"],a:[3],
-   e:"UNIQUE ішкі сұраныста қайталанатын жол болмаса true. Корреляция T.CourseId=R.CourseId ЖӘНЕ R.Year=2021 дұрыс."},
-  {q:"2021 жылы оқылған пәндер (COUNT арқылы)",
-   o:["WHERE 1<=(SELECT COUNT(R.CourseId) FROM SECTION R WHERE T.CourseId=R.CourseId AND R.Year=2021);","...WHERE T.CourseId=R.CourseId OR R.Year=2021);","...WHERE T.CourseId=R.CourseId); (жыл жоқ)","...WHERE T.CourseId=R.CourseId OR R.Year=2021); (OR)","...WHERE CourseId=CourseId AND Year=2021); (корреляция жоқ)","...WHERE R.Year=2021); (курс корреляциясы жоқ)"],a:[0],
-   e:"Ішкі сұраныста корреляция да (T.CourseId=R.CourseId), жыл сүзгісі де (R.Year=2021) дұрыс — A."},
-  {q:"Философия кодынан 1 санға кем сабақ туралы ақпарат",
-   o:["SELECT * FROM PREDMET WHERE Pnum=(SELECT Pnum-1 FROM PREDMET WHERE Pname='Философия');","...WHERE Pnum>=(SELECT Pnum-1 FROM PREDMET);","SELECT * FROM PREDMET WHERE Pnum=Pnum-1;","SELECT (SELECT Pnum-1 FROM PREDMET WHERE Pname='Философия');","...WHERE Pnum=(SELECT Pnum-1 FROM PREDMET); (шарт жоқ)","...WHERE Pnum<=(SELECT Pnum-1 ... Pname='Философия');"],a:[0],
-   e:"Ішкі сұраныс Философия кодынан 1 кемін (Pnum-1) есептейді, сыртқы сұраныс сол жазбаны табады."},
-  {q:"1НФ (бірінші қалыпты форма)",
-   o:["кілттік емес атрибуттары толығымен бастапқы кілтке тәуелді қатынас","кілттік емес атрибуттар өзара тәуелді емес қатынас","логикалық бөлінбейтін мәндерге ие қатынас","кестелер бір кестеге біріктірілетін қатынас","тұтастық сақталмайтын қатынас","логикалық бөлінетін мәндерге ие қатынас"],a:[2],
-   e:"1НФ — барлық атрибут мәндері атомарлы (бөлінбейтін) болуы шарт."},
+   e:"ON DELETE CASCADE — ата-жол жойылғанда, оған тәуелді жолдар автоматты түрде өшіріледі. ON DELETE NO ACTION — керісінше, жоюға тыйым салады."},
+  {q:"Студенттер кестесінде стипендия мәні 25000 болатындарды екі есеге көбейту",
+   o:["CREATE STUDENTS\nSET STIP = STIP * 2\nWHERE STIP = 25000;",
+      "INSERT INTO STUDENTS\nSET STIP = STIP * 2\nWHERE STIP = 25000;",
+      "DELETE STUDENTS\nWHERE STIP = 25000;",
+      "INSERT STUDENTS\nSET STIP = STIP * 2\nWHERE STIP = 25000;",
+      "UPDATE STUDENTS\nSET STIP = STIP * 2\nWHERE STIP = 25000;",
+      "UPDATE STUDENTS\nSELECT STIP = STIP *2\nWHERE STIP = 25000;"],a:[4],
+   e:"Бар жолдардың мәнін өзгерту — UPDATE ... SET ... WHERE. CREATE кесте жасайды, INSERT жаңа жол қосады, DELETE жолды өшіреді, F-та SET орнына SELECT жазылған."},
+  {q:"2003 кодтағы сабақтан барлық студенттердің балын NULL-ға өзгерту",
+   o:["INSERT USP\nSET Ocenka = NULL\nWHERE Pnum > 2003;",
+      "CREATE USP\nSET Ocenka = NULL\nWHERE Pnum = 2003;",
+      "INSERT INTO USP\nSET Ocenka = NULL\nWHERE Pnum = 2003;",
+      "UPDATE USP\nSET Ocenka = NULL\nWHERE Pnum = 2003;",
+      "INSERT INTO USP\nSET Ocenka = NULL;",
+      "UPDATE USP\nSET Ocenka = NULL;"],a:[3],
+   e:"Мәнді NULL-ге өзгерту — UPDATE USP SET Ocenka = NULL WHERE Pnum = 2003. F-та WHERE жоқ — бүкіл кестенің бағасы өшеді, A-да > 2003 (басқа жиын), қалғандары дұрыс емес оператор."},
+  {q:"UNIQUE кілттік сөзін қолданып, 2021 жылы бір рет қана оқылған пәндер",
+   o:["SELECT T.CourseId\nFROM COURSE AS T\nWHERE UNIQUE (SELECT R.CourseId\n  FROM SECTION AS R\n  WHERE T.CourseId = R.CourseId OR R.Year = 2021);",
+      "SELECT T.CourseId\nFROM COURSE AS T\nWHERE NOT UNIQUE (SELECT R.CourseId\n  FROM SECTION AS R\n  WHERE T.CourseId = R.CourseId AND R.Year = 2021);",
+      "SELECT T.CourseId\nFROM COURSE AS T\nWHERE SOME (SELECT R.CourseId\n  FROM SECTION AS R\n  WHERE T.CourseId = R.CourseId AND R.Year = 2021);",
+      "SELECT T.CourseId\nFROM COURSE AS T\nWHERE UNIQUE (SELECT R.CourseId\n  FROM SECTION AS R\n  WHERE T.CourseId = R.CourseId AND R.Year = 2021);",
+      "SELECT T.CourseId\nFROM COURSE AS T\nWHERE UNIQUE (SELECT CourseId\n  FROM SECTION AS R\n  WHERE CourseId = CourseId AND Year = 2021);",
+      "SELECT T.CourseId\nFROM COURSE AS T\nWHERE UNION(SELECT R.CourseId\n  FROM SECTION AS R\n  WHERE T.CourseId = R.CourseId AND R.Year = 2021);"],a:[3],
+   e:"UNIQUE предикаты ішкі сұраныс нәтижесінде қайталанатын жол болмаса true қайтарады — яғни пән 2021 жылы бір-ақ рет оқылған. Корреляция (T.CourseId = R.CourseId) және жыл сүзгісі (R.Year = 2021) AND арқылы дұрыс қосылған жалғыз нұсқа — D. A-да OR, B-да NOT UNIQUE (керісінше), C-да SOME, E-де корреляция жоқ (CourseId = CourseId), F-та UNION предикат емес."},
+  {q:"2021 жылы бір рет қана оқылған пәндер",
+   o:["SELECT T.CourseId\nFROM COURSE AS T\nWHERE 1 <= (SELECT COUNT(R.CourseId)\n  FROM SECTION AS R\n  WHERE T.CourseId = R.CourseId AND R.Year = 2021);",
+      "SELECT T.CourseId\nFROM COURSE AS T\nWHERE 1 <= (SELECT COUNT(R.CourseId)\n  FROM SECTION AS R\n  WHERE T.CourseId = R.CourseId OR\n  R.Year = 2021);",
+      "SELECT T.CourseId\nFROM COURSE AS T\nWHERE 1 <= (SELECT COUNT(R.CourseId)\n  FROM SECTION AS R\n  WHERE T.CourseId = R.CourseId);",
+      "SELECT T.CourseId\nFROM COURSE AS T\nWHERE 1 <= (SELECT COUNT(R.CourseId)\n  FROM SECTION AS R\n  WHERE T.CourseId = R.CourseId OR R.Year = 2021);",
+      "SELECT T.CourseId\nFROM COURSE AS T\nWHERE 1 <= (SELECT COUNT(R.CourseId)\n  FROM SECTION AS R\n  WHERE CourseId = CourseId AND Year = 2021);",
+      "SELECT T.CourseId\nFROM COURSE AS T\nWHERE 1 <= (SELECT COUNT(R.CourseId)\n  FROM SECTION AS R\n  WHERE R.Year = 2021);"],a:[0],
+   e:"Ішкі сұраныста корреляция да (T.CourseId = R.CourseId), жыл сүзгісі де (R.Year = 2021) AND арқылы дұрыс орналасқан жалғыз нұсқа — A. C-да жыл жоқ, F-та курс корреляциясы жоқ, E-де корреляция жалған (CourseId = CourseId), B/D-да AND орнына OR.\n⚠ Тесттің кемшілігі: сұрақта «бір рет қана» делінген, бұл 1 = COUNT(...) дегенді талап етеді, ал барлық алты нұсқада 1 <= COUNT(...), яғни «кемінде бір рет» жазылған. Нұсқалар тек ішкі сұраныстың шарты бойынша ажыратылады."},
+  {q:"Философия пәнінің кодынан 1 санға кем сабақ туралы ақпарат",
+   o:["SELECT * FROM PREDMET\nWHERE Pnum = (SELECT Pnum-1 FROM PREDMET\n  WHERE Pname = 'Философия');",
+      "SELECT * FROM PREDMET\nWHERE Pnum >= (SELECT Pnum-1 FROM PREDMET;\n  WHERE Pname = 'Философия');",
+      "SELECT * FROM PREDMET\nWHERE Pnum = Pnum-1",
+      "SELECT * FROM PREDMET\nWHERE (SELECT Pnum-1 FROM PREDMET\n  WHERE Pname = 'Философия');",
+      "SELECT * FROM PREDMET\nWHERE Pnum = (SELECT Pnum-1FROM PREDMET);",
+      "SELECT * FROM PREDMET\nWHERE Pnum <= (SELECT Pnum-1 FROM PREDMET\n  WHERE Pname = 'Философия');"],a:[0],
+   e:"Ішкі сұраныс Философияның кодынан 1 кемін (Pnum-1) есептейді, сыртқы сұраныс сол кодты жазбаны табады. B/F-та >= және <= (бір жазба емес, диапазон), C-да ішкі сұраныс мүлдем жоқ, D-да салыстыру операторы жоқ, E-де синтаксис қатесі (Pnum-1FROM) және пән аты бойынша шарт жоқ."},
+  {q:"1НФ",
+   o:["кілттік емес атрибуттары толығымен бастапқы кілтке тәуелді қатынас",
+      "кілттік емес атрибуттар өзара тәуелді емес қатынас",
+      "логикалық бөлінбейтін мәндерге ие қатынас",
+      "кестелер бір кестеге біріктірілетін қатынас",
+      "тұтастық сақталмайтын қатынас",
+      "логикалық бөлінетін мәндерге ие қатынас"],a:[2],
+   e:"1НФ — барлық атрибут мәндері атомарлы (әрі қарай логикалық бөлінбейтін) болуы шарт. A — 2НФ, B — 3НФ анықтамасы."},
   {q:"Скалярлық қатынас",
-   o:["сыртқы кілттік емес атрибуттары толығымен бастапқы кілтке тәуелді","кілттік емес атрибуттары толығымен бастапқы кілтке тәуелді","кестелер бір кестеге біріктіріледі","логикалық бөлінбейтін мәндерге ие қатынас","логикалық бөлінетін мәндерге ие","логикалық емес бөлінбейтін мәндерге ие қатынас"],a:[3],
-   e:"Скалярлық (атомарлы) қатынас — әр ұяшықта бір бөлінбейтін мән."},
-  {q:"Денормалдауда пайда болатын аномалия",
+   o:["сыртқы кілттік емес атрибуттары толығымен бастапқы кілтке тәуелді",
+      "кілттік емес атрибуттары толығымен бастапқы кілтке тәуелді",
+      "кестелер бір кестеге біріктіріледі",
+      "логикалық бөлінбейтін мәндерге ие қатынас",
+      "логикалық бөлінетін мәндерге ие",
+      "логикалық емес бөлінбейтін мәндерге ие қатынас"],a:[3],
+   e:"Скалярлық (атомарлы) қатынас — әр ұяшықта бір ғана бөлінбейтін мән болады.\n⚠ Ескерту: бұл нұсқаның мәтіні 18-сұрақтағы 1НФ жауабымен сөзбе-сөз бірдей — тестте скалярлық қатынас пен 1НФ бір анықтама арқылы берілген."},
+  {q:"Денормалауда пайда болатын аномалия",
    o:["іздеу аномалиясы","өзгерту аномалиясы","қосылу аномалиясы","енгізу аномалиясы","сұрыптау аномалиясы","жою аномалиясы","байланыс аномалиясы"],a:[1,3,5],
-   e:"Классикалық үш аномалия: енгізу (insert), өзгерту (update), жою (delete)."}
+   e:"Классикалық үш аномалия: енгізу (insert), өзгерту/жаңарту (update), жою (delete). Іздеу, сұрыптау, қосылу және байланыс аномалиясы деген ұғымдар жоқ."}
  ]}
 ];
 
@@ -266,10 +352,11 @@ DATA.forEach(section=>{
     if(item.code) html+=`<pre>${escapeHtml(item.code)}</pre>`;
     item.o.forEach((opt,i)=>{
       const type=multi?'checkbox':'radio';
+      const mono=opt.includes('\n')?' mono':''; // көп жолды SQL нұсқалары моноенді қаріппен
       html+=`<label class="opt" data-i="${i}">
         <input type="${type}" name="q${idx}" value="${i}">
         <span class="letter">${LET[i]}</span>
-        <span class="txt">${escapeHtml(opt)}</span>
+        <span class="txt${mono}">${escapeHtml(opt)}</span>
       </label>`;
     });
     html+=`<div class="expl"><b>Түсіндірме.</b> ${escapeHtml(item.e)}</div>`;
@@ -281,6 +368,19 @@ document.getElementById('total').textContent=total;
 
 function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+// 0.25 сияқты бөлшек ұпайды артық нөлсіз көрсету
+function fmt(n){return Number(n.toFixed(2)).toString();}
+
+function clearMark(card){
+  const m=card.querySelector('.mark');
+  if(m) m.remove();
+}
+
+/**
+ * Ішінара ұпай: әр дұрыс белгі +1/N, әр артық (қате) белгі −1/N, мұндағы N — дұрыс
+ * жауаптар саны. Ұпай 0-ден төмен түспейді. Бір жауапты сұрақта бұл ескі мінез-құлықпен
+ * бірдей: дұрыс = 1, қате немесе бос = 0.
+ */
 function gradeCard(card,revealOnly){
   const ans=card.dataset.ans.split(',').map(Number);
   const opts=[...card.querySelectorAll('.opt')];
@@ -294,19 +394,26 @@ function gradeCard(card,revealOnly){
     else if(chosen.includes(i)) o.classList.add('wrong');
   });
   card.querySelector('.expl').classList.add('show');
+  clearMark(card);
   if(revealOnly) return null;
-  // correct only if exactly matches
-  const ok = chosen.length===ans.length && chosen.every(c=>ans.includes(c));
-  return ok;
+
+  const hit=chosen.filter(c=>ans.includes(c)).length;
+  const extra=chosen.length-hit;
+  const pts=Math.max(0,(hit-extra)/ans.length);
+
+  const mark=document.createElement('span');
+  mark.className='mark '+(pts===1?'ok':pts===0?'bad':'part');
+  mark.textContent=pts===1?'+1':(pts===0?'0':'+'+fmt(pts));
+  card.querySelector('.num').insertAdjacentElement('afterend',mark);
+  return pts;
 }
 
 document.getElementById('check').addEventListener('click',()=>{
   let score=0;
   document.querySelectorAll('.q').forEach(card=>{
-    const ok=gradeCard(card,false);
-    if(ok) score++;
+    score+=gradeCard(card,false);
   });
-  document.getElementById('score').textContent=score;
+  document.getElementById('score').textContent=fmt(score);
   window.scrollTo({top:0,behavior:'smooth'});
 });
 
@@ -322,6 +429,7 @@ document.getElementById('reset').addEventListener('click',()=>{
       const inp=o.querySelector('input'); inp.disabled=false; inp.checked=false;
     });
     card.querySelector('.expl').classList.remove('show');
+    clearMark(card);
   });
   document.getElementById('score').textContent='0';
   window.scrollTo({top:0,behavior:'smooth'});
