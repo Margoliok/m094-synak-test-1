@@ -100,7 +100,8 @@
 <script>
 const DATA = [
 {sec:"1-СПЕЦ. Алгоритмдер және деректер құрылымы",
- note:"30 сұрақ · бір дұрыс жауап",
+ note:"30 сұрақ · бір дұрыс жауап · әрқайсысы 1 ұпай",
+ pts:1,
  qs:[
   {q:"Алгоритмдердің міндетті қасиеттерінің бірі",o:["түсіндірмелік","анықталмағандық","шексіздік","дискреттілік","үздіксіздік"],a:[3],
    e:"Алгоритмнің міндетті қасиеттері — дискреттілік, анықталғандық, нәтижелілік, жалпылық, шектілік."},
@@ -176,8 +177,9 @@ const DATA = [
    e:"Әр төбе қалған барлық төбелермен жалғанса — толық граф (complete graph)."}
  ]},
 {sec:"2-СПЕЦ ПӘН. Деректер базасы",
- note:"20 сұрақ · бір немесе бірнеше дұрыс жауабы бар (үш дұрыс жауаптан артық емес)",
+ note:"20 сұрақ · бір немесе бірнеше дұрыс жауабы бар (үш дұрыс жауаптан артық емес) · әрқайсысы 2 ұпай",
  multiSel:true, // бүкіл бөлімде бірнеше жауап таңдауға болады
+ pts:2,
  qs:[
   {q:"Факультет – Кафедра – Оқытушы байланысын бейнелейтін ағаштар тізімінен тұратын деректер моделі",
    o:["объектіге бағытталған","иерархиялық","кестелік","ER","желілік","реляциондық"],a:[1],
@@ -333,8 +335,9 @@ DATA.forEach(section=>{
   sn.textContent=section.note;
   quizEl.appendChild(sn);
 
+  const maxPts=section.pts||1; // 1-бөлім: 1 ұпай, 2-бөлім: 2 ұпай
   section.qs.forEach(item=>{
-    total++;
+    total+=maxPts;
     const idx=gi++;
     // Бөлімде multiSel болса — барлық сұрақ checkbox (дұрыс жауап саны бір болса да),
     // әйтпесе жауап саны бойынша анықталады.
@@ -344,6 +347,7 @@ DATA.forEach(section=>{
     card.dataset.idx=idx;
     card.dataset.ans=item.a.join(',');
     card.dataset.multi=multi?'1':'0';
+    card.dataset.max=maxPts;
 
     let html=`<span class="num">Сұрақ №${idx+1}</span>`;
     // Дұрыс жауап санын алдын ала ашып қоймау үшін бөлімдік multiSel-де белгі көрсетілмейді.
@@ -368,21 +372,30 @@ document.getElementById('total').textContent=total;
 
 function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-// 0.25 сияқты бөлшек ұпайды артық нөлсіз көрсету
-function fmt(n){return Number(n.toFixed(2)).toString();}
+/**
+ * ҰБТ жүйесі бойынша ұпай санау. Ұпай әрқашан бүтін: бөлшек ұпай жоқ.
+ *
+ *   max=1 (1-бөлім): жалғыз дұрыс нұсқа белгіленсе — 1, әйтпесе 0.
+ *   max=2 (2-бөлім): барлық дұрыс нұсқа белгіленсе — 2,
+ *                    бір бөлігі ғана белгіленсе — 1,
+ *                    ең болмағанда бір қате нұсқа белгіленсе — 0.
+ */
+function scoreOf(ans,chosen,max){
+  if(chosen.length===0) return 0;
+  if(chosen.some(c=>!ans.includes(c))) return 0;   // қате нұсқа бар → 0
+  const all=ans.every(a=>chosen.includes(a));
+  if(all) return max;                              // толық дұрыс
+  return max===2?1:0;                              // ішінара дұрыс
+}
 
 function clearMark(card){
   const m=card.querySelector('.mark');
   if(m) m.remove();
 }
 
-/**
- * Ішінара ұпай: әр дұрыс белгі +1/N, әр артық (қате) белгі −1/N, мұндағы N — дұрыс
- * жауаптар саны. Ұпай 0-ден төмен түспейді. Бір жауапты сұрақта бұл ескі мінез-құлықпен
- * бірдей: дұрыс = 1, қате немесе бос = 0.
- */
 function gradeCard(card,revealOnly){
   const ans=card.dataset.ans.split(',').map(Number);
+  const max=Number(card.dataset.max);
   const opts=[...card.querySelectorAll('.opt')];
   const chosen=[...card.querySelectorAll('input:checked')].map(i=>Number(i.value));
   opts.forEach(o=>{
@@ -397,13 +410,11 @@ function gradeCard(card,revealOnly){
   clearMark(card);
   if(revealOnly) return null;
 
-  const hit=chosen.filter(c=>ans.includes(c)).length;
-  const extra=chosen.length-hit;
-  const pts=Math.max(0,(hit-extra)/ans.length);
+  const pts=scoreOf(ans,chosen,max);
 
   const mark=document.createElement('span');
-  mark.className='mark '+(pts===1?'ok':pts===0?'bad':'part');
-  mark.textContent=pts===1?'+1':(pts===0?'0':'+'+fmt(pts));
+  mark.className='mark '+(pts===max?'ok':pts===0?'bad':'part');
+  mark.textContent=pts===0?'0':'+'+pts;
   card.querySelector('.num').insertAdjacentElement('afterend',mark);
   return pts;
 }
@@ -413,7 +424,7 @@ document.getElementById('check').addEventListener('click',()=>{
   document.querySelectorAll('.q').forEach(card=>{
     score+=gradeCard(card,false);
   });
-  document.getElementById('score').textContent=fmt(score);
+  document.getElementById('score').textContent=score;
   window.scrollTo({top:0,behavior:'smooth'});
 });
 
